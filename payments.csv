@@ -1,0 +1,9 @@
+Transaction,Customer,Amount,Problem
+TXN001,Rahul,8500,Bank Declined
+TXN002,Priya,2000,Expired Card
+TXN003,Amit,5500,Insufficient Funds
+TXN004,Sneha,12000,Network Error
+TXN005,Arjun,4500,Bank Declined
+TXN006,Neha,7000,Network Error
+TXN007,Rohan,3000,Expired Card
+TXN008,Anjali,9500,Insufficient Funds
