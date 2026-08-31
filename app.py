@@ -12,9 +12,6 @@ st.write("AI Revenue Recovery Assistant")
 
 st.divider()
 
-# =========================
-# UPLOAD PAYMENT DATA
-# =========================
 
 st.header("📂 Upload Payment Data")
 
@@ -29,9 +26,7 @@ if uploaded_file is not None:
 
     st.success("Payment file uploaded successfully! ✅")
 
-    # =========================
-    # CHECK CSV
-    # =========================
+
 
     required_columns = [
         "Transaction",
@@ -54,9 +49,6 @@ if uploaded_file is not None:
 
         st.stop()
 
-    # =========================
-    # RECOVERY SCORE
-    # =========================
 
     def get_score(problem):
 
@@ -78,9 +70,6 @@ if uploaded_file is not None:
         "Problem"
     ].apply(get_score)
 
-    # =========================
-    # RECOVERY ACTION
-    # =========================
 
     def get_action(problem):
 
@@ -102,19 +91,12 @@ if uploaded_file is not None:
         "Problem"
     ].apply(get_action)
 
-    # =========================
-    # POTENTIAL RECOVERY
-    # =========================
-
     data["Potential Recovery"] = (
         data["Amount"]
         * data["Recovery Score"]
         / 100
     )
 
-    # =========================
-    # PRIORITY
-    # =========================
 
     def get_priority(row):
 
@@ -135,9 +117,6 @@ if uploaded_file is not None:
         axis=1
     )
 
-    # =========================
-    # DASHBOARD
-    # =========================
 
     st.header("📊 Revenue Recovery Dashboard")
 
@@ -189,10 +168,6 @@ if uploaded_file is not None:
 
     st.divider()
 
-    # =========================
-    # PAYMENT TABLE
-    # =========================
-
     st.subheader("💰 Payment Analysis")
 
     st.dataframe(
@@ -213,9 +188,6 @@ if uploaded_file is not None:
 
     st.divider()
 
-    # =========================
-    # RECOVERY PRIORITY QUEUE
-    # =========================
 
     st.header("🎯 Recovery Priority Queue")
 
@@ -258,9 +230,6 @@ if uploaded_file is not None:
 
     st.divider()
 
-    # =========================
-    # RECOVERY ASSISTANT
-    # =========================
 
     st.header("🤖 AI Recovery Assistant")
 
@@ -321,9 +290,6 @@ if uploaded_file is not None:
 
     st.divider()
 
-    # =========================
-    # RECOVERY STRATEGY ENGINE
-    # =========================
 
     st.header(
         "🧠 Revenue Recovery Strategy Engine"
@@ -335,7 +301,6 @@ if uploaded_file is not None:
         "select the most suitable recovery strategy."
     )
 
-    # Strategy selection
 
     if problem == "Bank Declined":
 
@@ -452,9 +417,6 @@ if uploaded_file is not None:
             "Please try another payment method."
         )
 
-    # =========================
-    # DISPLAY STRATEGY
-    # =========================
 
     st.success(
         f"Recommended Strategy: {strategy}"
@@ -479,9 +441,6 @@ if uploaded_file is not None:
 
     st.divider()
 
-    # =========================
-    # CUSTOMER MESSAGE
-    # =========================
 
     st.subheader(
         "📩 Personalized Customer Message"
@@ -495,9 +454,6 @@ if uploaded_file is not None:
 
     st.divider()
 
-    # =========================
-    # AGENT DECISION
-    # =========================
 
     st.header("⚡ Recovery Agent Decision")
 
@@ -536,9 +492,6 @@ if uploaded_file is not None:
 
     st.divider()
 
-    # =========================
-    # STATISTICS
-    # =========================
 
     st.subheader(
         "📊 Failure Statistics"
@@ -551,9 +504,7 @@ if uploaded_file is not None:
     st.success(
         "PayPulse AI revenue recovery analysis completed! 🚀"
     )
-    # =========================
-# RECOVERY SIMULATION
-# =========================
+    
 
 st.header("🚀 Recovery Simulation")
 
@@ -634,9 +585,6 @@ if st.button("▶️ Simulate Recovery"):
         st.info(
             f"Potential revenue targeted: ₹{potential:,.0f}"
         )
-        # =========================
-# RECOVERY SUMMARY
-# =========================
 
 st.divider()
 
