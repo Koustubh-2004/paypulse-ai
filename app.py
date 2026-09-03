@@ -1,624 +1,824 @@
 import streamlit as st
 import pandas as pd
+import textwrap
+
 
 st.set_page_config(
     page_title="PayPulse AI",
     page_icon="💳",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-st.title("💳 PayPulse AI")
-st.write("AI Revenue Recovery Assistant")
+
+st.markdown(
+    """
+<style>
+
+.stApp {
+    background-color: #f7f9fc;
+}
+
+.main .block-container {
+    max-width: 1200px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+section[data-testid="stSidebar"] {
+    background-color: white;
+    border-right: 1px solid #e5e7eb;
+}
+
+h1, h2, h3 {
+    color: #111827 !important;
+}
+
+p {
+    color: #4b5563;
+}
+
+[data-testid="stMetric"] {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+}
+
+[data-testid="stMetricLabel"] {
+    color: #6b7280 !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stMetricValue"] {
+    color: #111827 !important;
+    font-weight: 800 !important;
+}
+
+.stButton > button {
+    border-radius: 10px;
+    font-weight: 700;
+    padding: 10px 20px;
+}
+
+[data-testid="stFileUploader"] {
+    background-color: white;
+    border: 2px dashed #bfdbfe;
+    border-radius: 16px;
+    padding: 15px;
+}
+
+</style>
+""",
+    unsafe_allow_html=True
+)
+
+
+with st.sidebar:
+
+    st.markdown(
+        """
+        <div style="text-align:center; padding:10px 0 20px 0;">
+            <div style="font-size:42px;">💳</div>
+            <h2 style="margin:0;">PayPulse AI</h2>
+            <p style="margin-top:5px;">
+                Revenue Recovery
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.divider()
+
+    st.markdown("### 🧭 Navigation")
+
+    st.info(
+        "Upload payment data below to start the recovery analysis."
+    )
+
+    st.divider()
+
+    st.markdown("### 💰 About PayPulse")
+
+    st.caption(
+        "PayPulse analyzes failed payments, "
+        "estimates recovery opportunities, "
+        "and recommends recovery actions."
+    )
+
+    st.divider()
+
+    st.caption("PayPulse AI")
+    st.caption("Revenue Recovery Assistant")
+
+
+header_html = """
+<div style="
+background: linear-gradient(135deg, #1d4ed8, #2563eb);
+padding: 32px;
+border-radius: 20px;
+margin-bottom: 25px;
+box-shadow: 0 10px 30px rgba(37, 99, 235, 0.20);
+">
+
+<div style="
+color: white;
+font-size: 42px;
+font-weight: 800;
+">
+💳 PayPulse AI
+</div>
+
+<div style="
+color: #dbeafe;
+font-size: 18px;
+margin-top: 8px;
+">
+Revenue Recovery Assistant for Failed Payments
+</div>
+
+</div>
+"""
+
+st.markdown(
+    textwrap.dedent(header_html),
+    unsafe_allow_html=True
+)
+
 
 st.divider()
 
-
 st.header("📂 Upload Payment Data")
 
+st.write("Upload your payment CSV file.")
+
 uploaded_file = st.file_uploader(
-    "Upload your payments.csv file",
+    "Upload payments.csv",
     type=["csv"]
 )
 
-if uploaded_file is not None:
+
+if uploaded_file is None:
+
+    st.info(
+        "👆 Upload your payments.csv file to start the analysis."
+    )
+
+    st.subheader("Required CSV format")
+
+    example_data = pd.DataFrame(
+        {
+            "Transaction": ["TXN001", "TXN002", "TXN003"],
+            "Customer": ["Rahul", "Priya", "Amit"],
+            "Amount": [8500, 2000, 5500],
+            "Problem": [
+                "Bank Declined",
+                "Expired Card",
+                "Insufficient Funds"
+            ]
+        }
+    )
+
+    st.dataframe(
+        example_data,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.stop()
+
+
+try:
 
     data = pd.read_csv(uploaded_file)
 
-    st.success("Payment file uploaded successfully! ✅")
+except Exception:
 
-
-
-    required_columns = [
-        "Transaction",
-        "Customer",
-        "Amount",
-        "Problem"
-    ]
-
-    missing = [
-        column
-        for column in required_columns
-        if column not in data.columns
-    ]
-
-    if missing:
-
-        st.error(
-            "Missing columns: " + ", ".join(missing)
-        )
-
-        st.stop()
-
-
-    def get_score(problem):
-
-        if problem == "Bank Declined":
-            return 80
-
-        elif problem == "Network Error":
-            return 70
-
-        elif problem == "Insufficient Funds":
-            return 50
-
-        elif problem == "Expired Card":
-            return 30
-
-        return 20
-
-    data["Recovery Score"] = data[
-        "Problem"
-    ].apply(get_score)
-
-
-    def get_action(problem):
-
-        if problem == "Bank Declined":
-            return "Retry payment after a short delay"
-
-        elif problem == "Network Error":
-            return "Ask customer to retry payment"
-
-        elif problem == "Insufficient Funds":
-            return "Send payment reminder"
-
-        elif problem == "Expired Card":
-            return "Ask customer to update card"
-
-        return "Contact customer"
-
-    data["Recovery Action"] = data[
-        "Problem"
-    ].apply(get_action)
-
-    data["Potential Recovery"] = (
-        data["Amount"]
-        * data["Recovery Score"]
-        / 100
-    )
-
-
-    def get_priority(row):
-
-        score = row["Recovery Score"]
-        amount = row["Amount"]
-
-        if score >= 70 and amount >= 5000:
-            return "HIGH"
-
-        elif score >= 50:
-            return "MEDIUM"
-
-        else:
-            return "LOW"
-
-    data["Priority"] = data.apply(
-        get_priority,
-        axis=1
-    )
-
-
-    st.header("📊 Revenue Recovery Dashboard")
-
-    total_failed = len(data)
-
-    revenue_at_risk = data[
-        "Amount"
-    ].sum()
-
-    potential_recovery = data[
-        "Potential Recovery"
-    ].sum()
-
-    high_priority = len(
-        data[
-            data["Priority"] == "HIGH"
-        ]
-    )
-
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-
-        st.metric(
-            "💳 Failed Payments",
-            total_failed
-        )
-
-    with col2:
-
-        st.metric(
-            "💰 Revenue at Risk",
-            f"₹{revenue_at_risk:,.0f}"
-        )
-
-    with col3:
-
-        st.metric(
-            "💵 Potential Recovery",
-            f"₹{potential_recovery:,.0f}"
-        )
-
-    with col4:
-
-        st.metric(
-            "🔴 High Priority",
-            high_priority
-        )
-
-    st.divider()
-
-    st.subheader("💰 Payment Analysis")
-
-    st.dataframe(
-        data[
-            [
-                "Transaction",
-                "Customer",
-                "Amount",
-                "Problem",
-                "Recovery Score",
-                "Potential Recovery",
-                "Priority",
-                "Recovery Action"
-            ]
-        ],
-        use_container_width=True
-    )
-
-    st.divider()
-
-
-    st.header("🎯 Recovery Priority Queue")
-
-    priority_number = {
-        "HIGH": 1,
-        "MEDIUM": 2,
-        "LOW": 3
-    }
-
-    data["Priority Number"] = data[
-        "Priority"
-    ].map(priority_number)
-
-    queue = data.sort_values(
-        by=[
-            "Priority Number",
-            "Potential Recovery"
-        ],
-        ascending=[
-            True,
-            False
-        ]
-    )
-
-    st.dataframe(
-        queue[
-            [
-                "Transaction",
-                "Customer",
-                "Amount",
-                "Problem",
-                "Recovery Score",
-                "Potential Recovery",
-                "Priority",
-                "Recovery Action"
-            ]
-        ],
-        use_container_width=True
-    )
-
-    st.divider()
-
-
-    st.header("🤖 AI Recovery Assistant")
-
-    transaction = st.selectbox(
-        "Select a failed payment",
-        data["Transaction"].tolist()
-    )
-
-    payment = data[
-        data["Transaction"] == transaction
-    ].iloc[0]
-
-    customer = payment["Customer"]
-    amount = payment["Amount"]
-    problem = payment["Problem"]
-    score = payment["Recovery Score"]
-    priority = payment["Priority"]
-    potential = payment["Potential Recovery"]
-    action = payment["Recovery Action"]
-
-    st.subheader("🔍 Payment Analysis")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        st.write(
-            f"**Transaction:** {transaction}"
-        )
-
-        st.write(
-            f"**Customer:** {customer}"
-        )
-
-        st.write(
-            f"**Amount:** ₹{amount:,.0f}"
-        )
-
-        st.write(
-            f"**Failure Reason:** {problem}"
-        )
-
-        st.write(
-            f"**Priority:** {priority}"
-        )
-
-    with col2:
-
-        st.metric(
-            "Recovery Score",
-            f"{score}/100"
-        )
-
-        st.metric(
-            "Potential Recovery",
-            f"₹{potential:,.0f}"
-        )
-
-    st.divider()
-
-
-    st.header(
-        "🧠 Revenue Recovery Strategy Engine"
-    )
+    st.error("❌ Could not read the CSV file.")
 
     st.write(
-        "PayPulse analyzes the failure reason, "
-        "payment amount and recovery score to "
-        "select the most suitable recovery strategy."
+        "Please make sure you are uploading a valid CSV file."
     )
 
+    st.stop()
 
-    if problem == "Bank Declined":
 
-        strategy = "Smart Retry"
+data.columns = (
+    data.columns
+    .astype(str)
+    .str.strip()
+)
 
-        explanation = (
-            "The payment has a relatively high recovery "
-            "opportunity. A retry after a short delay "
-            "may successfully recover the payment."
-        )
 
-        retry = "Retry after a short delay"
 
-        alternative = (
-            "Offer another payment method if retry fails."
-        )
+required_columns = [
+    "Transaction",
+    "Customer",
+    "Amount",
+    "Problem"
+]
 
-        customer_message = (
-            f"Hi {customer}, your payment of "
-            f"₹{amount:,.0f} was declined by your bank. "
-            "Please try the payment again after a short while. "
-            "You can also use another payment method."
-        )
+missing_columns = [
+    column
+    for column in required_columns
+    if column not in data.columns
+]
 
-    elif problem == "Network Error":
+if missing_columns:
 
-        strategy = "Retry Immediately"
+    st.error(
+        "❌ Missing columns: "
+        + ", ".join(missing_columns)
+    )
 
-        explanation = (
-            "The failure may be temporary. "
-            "A retry is appropriate because network "
-            "errors can be transient."
-        )
+    st.write("Your CSV must contain:")
 
-        retry = "Retry the payment"
+    st.code(
+        "Transaction,Customer,Amount,Problem"
+    )
 
-        alternative = (
-            "Ask the customer to use another network "
-            "or payment method."
-        )
+    st.stop()
 
-        customer_message = (
+
+
+data["Amount"] = pd.to_numeric(
+    data["Amount"],
+    errors="coerce"
+)
+
+data = data.dropna(
+    subset=["Amount"]
+).copy()
+
+data["Transaction"] = (
+    data["Transaction"]
+    .astype(str)
+    .str.strip()
+)
+
+data["Customer"] = (
+    data["Customer"]
+    .astype(str)
+    .str.strip()
+)
+
+data["Problem"] = (
+    data["Problem"]
+    .astype(str)
+    .str.strip()
+)
+
+if data.empty:
+
+    st.error(
+        "❌ No valid payment records were found."
+    )
+
+    st.stop()
+
+st.success(
+    f"✅ Payment file uploaded successfully! "
+    f"{len(data)} payment(s) found."
+)
+
+
+def calculate_recovery_score(row):
+
+    problem = str(row["Problem"]).lower()
+    amount = float(row["Amount"])
+
+    if "network" in problem:
+        score = 80
+
+    elif "declined" in problem:
+        score = 70
+
+    elif "expired" in problem:
+        score = 60
+
+    elif "insufficient" in problem:
+        score = 50
+
+    else:
+        score = 40
+
+    if amount >= 10000:
+        score += 10
+
+    elif amount >= 5000:
+        score += 5
+
+    return max(0, min(score, 100))
+
+
+
+def calculate_priority(score):
+
+    if score >= 75:
+        return "HIGH"
+
+    elif score >= 50:
+        return "MEDIUM"
+
+    else:
+        return "LOW"
+
+
+def get_strategy(problem, priority):
+
+    problem = str(problem).lower()
+
+    if "network" in problem:
+        return "Retry Payment"
+
+    elif "expired" in problem:
+        return "Ask Customer to Update Card"
+
+    elif "insufficient" in problem:
+        return "Send Payment Reminder"
+
+    elif "declined" in problem:
+        return "Offer Alternative Payment Method"
+
+    elif priority == "HIGH":
+        return "Immediate Customer Follow-up"
+
+    elif priority == "MEDIUM":
+        return "Send Payment Reminder"
+
+    else:
+        return "Monitor and Follow Up Later"
+
+
+def create_customer_message(customer, amount, problem):
+
+    problem_lower = str(problem).lower()
+
+    if "insufficient" in problem_lower:
+
+        return (
             f"Hi {customer}, your payment of "
             f"₹{amount:,.0f} could not be completed "
-            "because of a temporary connection issue. "
-            "Please try again."
+            f"because sufficient funds were not available. "
+            f"Please check your account balance and try again."
         )
 
-    elif problem == "Insufficient Funds":
+    elif "expired" in problem_lower:
 
-        strategy = "Payment Reminder"
-
-        explanation = (
-            "Immediately retrying may have a low chance "
-            "of success. A reminder gives the customer "
-            "time to make funds available."
-        )
-
-        retry = "Retry after customer confirms funds"
-
-        alternative = (
-            "Offer another available payment method."
-        )
-
-        customer_message = (
-            f"Hi {customer}, your payment of "
-            f"₹{amount:,.0f} could not be completed. "
-            "Please check your account balance and try again "
-            "when sufficient funds are available."
-        )
-
-    elif problem == "Expired Card":
-
-        strategy = "Payment Method Update"
-
-        explanation = (
-            "The current card may no longer be valid. "
-            "Updating the payment method is more useful "
-            "than repeatedly retrying the transaction."
-        )
-
-        retry = "Do not repeatedly retry the old card"
-
-        alternative = (
-            "Ask the customer to update the card "
-            "or use another payment method."
-        )
-
-        customer_message = (
+        return (
             f"Hi {customer}, your payment of "
             f"₹{amount:,.0f} could not be completed "
-            "because your card may have expired. "
-            "Please update your card or use another payment method."
+            f"because your payment card may have expired. "
+            f"Please update your payment method and try again."
+        )
+
+    elif "network" in problem_lower:
+
+        return (
+            f"Hi {customer}, your payment of "
+            f"₹{amount:,.0f} could not be completed "
+            f"because of a temporary network issue. "
+            f"Please try again."
+        )
+
+    elif "declined" in problem_lower:
+
+        return (
+            f"Hi {customer}, your payment of "
+            f"₹{amount:,.0f} was declined. "
+            f"Please try another payment method."
         )
 
     else:
 
-        strategy = "Manual Review"
-
-        explanation = (
-            "The failure reason is not recognized. "
-            "Manual review is recommended before retrying."
-        )
-
-        retry = "Review before retrying"
-
-        alternative = (
-            "Contact the customer for another payment method."
-        )
-
-        customer_message = (
-            f"Hi {customer}, we could not complete "
-            f"your payment of ₹{amount:,.0f}. "
-            "Please try another payment method."
+        return (
+            f"Hi {customer}, your payment of "
+            f"₹{amount:,.0f} could not be completed. "
+            f"Please try again or use another payment method."
         )
 
 
-    st.success(
-        f"Recommended Strategy: {strategy}"
+data["Recovery Score"] = data.apply(
+    calculate_recovery_score,
+    axis=1
+)
+
+data["Priority"] = data["Recovery Score"].apply(
+    calculate_priority
+)
+
+data["Potential Recovery"] = (
+    data["Amount"]
+    * data["Recovery Score"]
+    / 100
+)
+
+data["Recommended Strategy"] = data.apply(
+    lambda row: get_strategy(
+        row["Problem"],
+        row["Priority"]
+    ),
+    axis=1
+)
+
+st.divider()
+
+st.header("📊 Revenue Recovery Dashboard")
+
+total_payments = len(data)
+
+total_revenue = float(
+    data["Amount"].sum()
+)
+
+total_recovery = float(
+    data["Potential Recovery"].sum()
+)
+
+high_priority_count = len(
+    data[data["Priority"] == "HIGH"]
+)
+
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+
+    st.metric(
+        "Failed Payments",
+        total_payments
+    )
+
+with col2:
+
+    st.metric(
+        "Revenue at Risk",
+        f"₹{total_revenue:,.0f}"
+    )
+
+with col3:
+
+    st.metric(
+        "Potential Recovery",
+        f"₹{total_recovery:,.0f}"
+    )
+
+with col4:
+
+    st.metric(
+        "High Priority",
+        high_priority_count
+    )
+
+
+st.subheader("📋 Payment Analysis")
+
+display_columns = [
+    "Transaction",
+    "Customer",
+    "Amount",
+    "Problem",
+    "Recovery Score",
+    "Priority",
+    "Potential Recovery",
+    "Recommended Strategy"
+]
+
+st.dataframe(
+    data[display_columns],
+    use_container_width=True,
+    hide_index=True
+)
+
+st.divider()
+
+st.header("🤖 AI Recovery Assistant")
+
+transaction_options = (
+    data["Transaction"]
+    .astype(str)
+    .tolist()
+)
+
+selected_transaction = st.selectbox(
+    "Select a failed payment",
+    transaction_options
+)
+
+selected_rows = data[
+    data["Transaction"].astype(str)
+    == selected_transaction
+]
+
+if selected_rows.empty:
+
+    st.error("Payment could not be found.")
+
+    st.stop()
+
+selected_row = selected_rows.iloc[0]
+
+transaction = selected_row["Transaction"]
+
+customer = selected_row["Customer"]
+
+amount = float(
+    selected_row["Amount"]
+)
+
+problem = selected_row["Problem"]
+
+score = int(
+    selected_row["Recovery Score"]
+)
+
+priority = selected_row["Priority"]
+
+potential = float(
+    selected_row["Potential Recovery"]
+)
+
+strategy = selected_row[
+    "Recommended Strategy"
+]
+
+st.subheader("🔍 Payment Analysis")
+
+left, right = st.columns(2)
+
+with left:
+
+    st.write(
+        f"**Transaction:** {transaction}"
     )
 
     st.write(
-        f"**Why:** {explanation}"
+        f"**Customer:** {customer}"
     )
 
     st.write(
-        f"**Retry Decision:** {retry}"
+        f"**Amount:** ₹{amount:,.0f}"
     )
 
     st.write(
-        f"**Alternative:** {alternative}"
+        f"**Failure Reason:** {problem}"
+    )
+
+with right:
+
+    st.write(
+        f"**Priority:** {priority}"
     )
 
     st.metric(
-        "Estimated Recovery Opportunity",
+        "Recovery Score",
+        f"{score}/100"
+    )
+
+    st.metric(
+        "Potential Recovery",
         f"₹{potential:,.0f}"
     )
 
-    st.divider()
+
+st.divider()
+
+st.subheader("📩 Customer Recovery Message")
+
+message = create_customer_message(
+    customer,
+    amount,
+    problem
+)
+
+st.success(message)
+
+st.text_area(
+    "Message to send",
+    value=message,
+    height=120
+)
 
 
-    st.subheader(
-        "📩 Personalized Customer Message"
+st.divider()
+
+st.subheader("🧠 Recovery Strategy")
+
+st.info(
+    f"**Recommended Strategy:** {strategy}"
+)
+
+
+st.header("🤖 Auto Recovery Plan")
+
+st.write(
+    "PayPulse creates a recovery workflow "
+    "based on the failure reason and priority."
+)
+
+if priority == "HIGH":
+
+    st.warning(
+        "🔴 HIGH PRIORITY → Immediate customer "
+        "follow-up → Offer alternative payment "
+        "method → Monitor payment."
     )
 
-    st.text_area(
-        "Recovery message",
-        customer_message,
-        height=150
+elif priority == "MEDIUM":
+
+    st.info(
+        "🟡 MEDIUM PRIORITY → Send payment reminder "
+        "→ Allow customer to retry → Monitor payment."
     )
 
-    st.divider()
-
-
-    st.header("⚡ Recovery Agent Decision")
-
-    st.write(
-        "PayPulse converts the payment analysis into "
-        "a recommended next action."
-    )
-
-    if priority == "HIGH":
-
-        st.success(
-            "🔴 HIGH PRIORITY\n\n"
-            "1. Send customer recovery message\n"
-            "2. Retry payment after the recommended delay\n"
-            "3. Offer an alternative payment method\n"
-            "4. Monitor the transaction"
-        )
-
-    elif priority == "MEDIUM":
-
-        st.warning(
-            "🟡 MEDIUM PRIORITY\n\n"
-            "1. Send payment reminder\n"
-            "2. Allow customer to retry\n"
-            "3. Monitor payment status"
-        )
-
-    else:
-
-        st.info(
-            "🟢 LOW PRIORITY\n\n"
-            "1. Contact customer\n"
-            "2. Request payment method update\n"
-            "3. Retry later"
-        )
-
-    st.divider()
-
-
-    st.subheader(
-        "📊 Failure Statistics"
-    )
-
-    st.bar_chart(
-        data["Problem"].value_counts()
-    )
+else:
 
     st.success(
-        "PayPulse AI revenue recovery analysis completed! 🚀"
+        "🟢 LOW PRIORITY → Notify customer "
+        "→ Allow retry later → Monitor payment."
     )
-    
+
+
+st.divider()
 
 st.header("🚀 Recovery Simulation")
 
 st.write(
-    "Simulate what happens when PayPulse executes "
-    "the recommended recovery strategy."
+    "Simulate what happens when PayPulse "
+    "executes the recommended recovery strategy."
 )
 
 if st.button("▶️ Simulate Recovery"):
 
+    st.success(
+        f"Recovery workflow started for {transaction}."
+    )
+
+    st.write(
+        "Step 1 ✅ Recovery message prepared"
+    )
+
     if priority == "HIGH":
 
-        st.success(
-            f"Recovery action started for {transaction}."
-        )
-
         st.write(
-            "Step 1 ✅ Customer recovery message prepared"
-        )
-
-        st.write(
-            "Step 2 ✅ Payment retry scheduled"
+            "Step 2 ✅ Immediate customer follow-up"
         )
 
         st.write(
             "Step 3 ✅ Alternative payment method offered"
         )
 
-        st.write(
-            "Step 4 ✅ Transaction added to monitoring"
-        )
-
-        st.success(
-            f"Potential revenue targeted: ₹{potential:,.0f}"
-        )
-
     elif priority == "MEDIUM":
 
-        st.warning(
-            f"Recovery reminder started for {transaction}."
+        st.write(
+            "Step 2 ✅ Payment reminder prepared"
         )
 
         st.write(
-            "Step 1 ✅ Payment reminder prepared"
-        )
-
-        st.write(
-            "Step 2 ✅ Customer retry requested"
-        )
-
-        st.write(
-            "Step 3 ✅ Payment monitoring enabled"
-        )
-
-        st.info(
-            f"Potential revenue targeted: ₹{potential:,.0f}"
+            "Step 3 ✅ Customer retry requested"
         )
 
     else:
 
-        st.info(
-            f"Low-priority recovery workflow started "
-            f"for {transaction}."
-        )
-
         st.write(
-            "Step 1 ✅ Customer contact recommended"
-        )
-
-        st.write(
-            "Step 2 ✅ Payment method update requested"
+            "Step 2 ✅ Customer contact recommended"
         )
 
         st.write(
             "Step 3 ✅ Retry scheduled for later"
         )
 
-        st.info(
-            f"Potential revenue targeted: ₹{potential:,.0f}"
-        )
+    st.write(
+        "Step 4 ✅ Payment monitoring enabled"
+    )
+
+    st.info(
+        f"Potential recovery opportunity: "
+        f"₹{potential:,.0f}"
+    )
+
+    st.caption(
+        "This is a simulation. "
+        "No real payment is processed."
+    )
+
+
 
 st.divider()
 
 st.header("📋 Recovery Summary")
 
-total_recovery_opportunity = data[
-    "Potential Recovery"
-].sum()
+high_count = len(
+    data[data["Priority"] == "HIGH"]
+)
 
-high_value_payments = data[
-    data["Priority"] == "HIGH"
-]
+medium_count = len(
+    data[data["Priority"] == "MEDIUM"]
+)
+
+low_count = len(
+    data[data["Priority"] == "LOW"]
+)
 
 st.write(
-    f"PayPulse identified **{len(high_value_payments)} high-priority "
+    f"PayPulse identified **{high_count} high-priority "
     f"payment(s)** requiring immediate attention."
 )
 
 st.write(
     f"Total revenue at risk: "
-    f"**₹{data['Amount'].sum():,.0f}**"
+    f"**₹{total_revenue:,.0f}**"
 )
 
 st.write(
     f"Estimated recovery opportunity: "
-    f"**₹{total_recovery_opportunity:,.0f}**"
+    f"**₹{total_recovery:,.0f}**"
 )
 
-st.write(
-    "The recovery engine prioritizes failed payments "
-    "based on failure reason, transaction value, and "
-    "estimated recovery probability."
+col1, col2, col3 = st.columns(3)
+
+with col1:
+
+    st.metric(
+        "🔴 High Priority",
+        high_count
+    )
+
+with col2:
+
+    st.metric(
+        "🟡 Medium Priority",
+        medium_count
+    )
+
+with col3:
+
+    st.metric(
+        "🟢 Low Priority",
+        low_count
+    )
+
+
+
+st.divider()
+
+st.header("📊 Failure Statistics")
+
+failure_counts = (
+    data["Problem"]
+    .value_counts()
+    .rename_axis("Failure Reason")
+    .reset_index(name="Number of Payments")
 )
 
-st.success(
-    "✅ Recovery analysis ready for action"
+st.dataframe(
+    failure_counts,
+    use_container_width=True,
+    hide_index=True
+)
+
+if not failure_counts.empty:
+
+    st.bar_chart(
+        failure_counts.set_index(
+            "Failure Reason"
+        )
+    )
+
+
+st.divider()
+
+st.header("📥 Download Recovery Report")
+
+report = data.to_csv(
+    index=False
+).encode("utf-8")
+
+st.download_button(
+    "⬇️ Download Recovery Report",
+    data=report,
+    file_name="paypulse_recovery_report.csv",
+    mime="text/csv"
+)
+
+
+st.divider()
+
+st.markdown(
+    """
+    <div style="
+        text-align:center;
+        padding:20px;
+        color:#6b7280;
+    ">
+        <b>💳 PayPulse AI</b><br>
+        Revenue Recovery Assistant<br><br>
+        <small>
+        Demonstration project using simulated payment data.<br>
+        No real payments are processed.
+        </small>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
